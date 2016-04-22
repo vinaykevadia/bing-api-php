@@ -48,7 +48,7 @@ class Client
         $data = file_get_contents($query_url, 0, $this->context);
         $_data = json_decode($data, true);
 
-        if(is_array($_data)){
+        if(is_array($_data) && !empty($_data["d"])){
             return $_data["d"];
         }else {
             throw new BingException("Error while calling bing search api, : $data");
