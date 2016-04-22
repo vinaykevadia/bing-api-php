@@ -1,7 +1,7 @@
 <?php
 
 namespace Bing;
-
+use Bing\BingException;
 class Client
 {
     protected $version;
@@ -24,14 +24,35 @@ class Client
         $this->context = stream_context_create($data);
     }
 
-    public function get($endpoint, $params = array())
+    /**
+     * Get search results
+     * @param $endpoint
+     * @param array $params
+     * @param null $query_url
+     * @return mixed
+     * @throws \Bing\BingException
+     */
+    public function get($endpoint, $params = array(), $query_url = null)
     {
-        $qs = "?\$format={$this->output}";
-        if ($params['Query']) {
-            $params['Query'] = "'{$params['Query']}'";
+        if(!$query_url){
+            $qs = "?\$format={$this->output}";
+            if ($params['Query']) {
+                $params['Query'] = "'{$params['Query']}'";
+            }
+            $qs .= ($params) ? '&'.http_build_query($params) : '';
+            $query_url = $this->base_uri.'/'.$endpoint.$qs;
+        }else{
+            $query_url = $query_url . "&\$format={$this->output}";
         }
-        $qs .= ($params) ? '&'.http_build_query($params) : '';
 
-        return file_get_contents($this->base_uri.'/'.$endpoint.$qs, 0, $this->context);
+        $data = file_get_contents($query_url, 0, $this->context);
+        $_data = json_decode($data, true);
+
+        if(is_array($_data)){
+            return $_data["d"];
+        }else {
+            throw new BingException("Error while calling bing search api, : $data");
+        }
+
     }
 }
